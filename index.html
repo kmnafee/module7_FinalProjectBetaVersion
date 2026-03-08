@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Urban Tree Phenology Explorer</title>
+  <title>Urban Tree Phenophase Explorer</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -158,19 +158,19 @@
 </head>
 <body>
   <header>
-    <h1>Urban Tree Phenology Explorer</h1>
-    <p>Species-level phenophase transitions on the University of Kentucky campus (2023–2025). Tree polygons are symbolized by species name and linked to phenology records using TARGET_FID.</p>
+    <h1>Urban Tree Phenophase Explorer</h1>
+    <p>Species-level phenophase transitions on the University of Kentucky campus (2023–2025). Tree polygons are symbolized by species name and linked to phenology records using TARGET_FID (Tree IDs).</p>
   </header>
 
   <div class="app">
     <aside class="panel">
       <div class="d-flex align-items-center justify-content-between mb-2">
         <h5 class="mb-0">Filters</h5>
-        <span class="pill">Beta Version</span>
+        <span class="pill">Beta Version (Mod 7)</span>
       </div>
 
       <p class="small-note mb-3">
-        Tree polygons are colored by species. Use the year toggle to view the selected year's phenophase values in the information panel.
+        Tree polygons are colored by species. The year toggle lets the user to view the selected year's phenophase values in the information panel.
       </p>
 
       <div class="mb-3">
@@ -254,7 +254,7 @@
     let selectedFeature = null;
     let speciesColorMap = {};
 
-    // 18-color palette
+    // 18 color palette
     const colorPalette = [
       "#1b9e77", "#d95f02", "#7570b3", "#e7298a", "#66a61e", "#e6ab02",
       "#a6761d", "#666666", "#1f78b4", "#b2df8a", "#fb9a99", "#fdbf6f",

@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Urban Tree Phenology Explorer</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://unpkg.com/shpjs@latest/dist/shp.min.js"></script>
+
+  <style>
+    :root{
+      --brand: #1f5a3b;
+      --panel: #f8f9fa;
+      --panel2:#fcfcfd;
+      --border:#e6e6e6;
+      --text:#111;
+      --muted:#555;
+    }
+
+    body{
+      margin:0;
+      color:var(--text);
+      font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:#fff;
+    }
+
+    header{
+      background: var(--brand);
+      color:#fff;
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+    }
+
+    header h1{
+      font-family: "Playfair Display", Georgia, serif;
+      font-weight: 700;
+      font-size: 1.65rem;
+      margin:0;
+      letter-spacing: 0.2px;
+    }
+
+    header p{
+      margin: 4px 0 0 0;
+      opacity: 0.92;
+      font-size: 0.95rem;
+      max-width: 1000px;
+    }
+
+    .app{
+      display:grid;
+      grid-template-columns: 330px 1fr 360px;
+      height: calc(100vh - 78px);
+    }
+
+    .panel{
+      padding: 14px;
+      overflow:auto;
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+    }
+
+    .panel-right{
+      background: var(--panel2);
+      border-right: 0;
+      border-left: 1px solid var(--border);
+    }
+
+    #map{
+      width:100%;
+      height:100%;
+    }
+
+    .small-note{
+      font-size: 0.92rem;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .legend-box{
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      background:#fff;
+      padding: 12px;
+    }
+
+    .pill{
+      display:inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background:#e8f3ed;
+      border: 1px solid #cfe6da;
+      color: var(--brand);
+      font-weight: 600;
+      font-size: 0.8rem;
+    }
+
+    .info-card{
+      border: 1px solid #e3e3e3;
+      border-radius: 14px;
+      background:#fff;
+      padding: 14px;
+    }
+
+    .legend-scale{
+      margin-top: 10px;
+      max-height: 360px;
+      overflow-y: auto;
+      padding-right: 6px;
+    }
+
+    .legend-row{
+      display:flex;
+      align-items:center;
+      margin-top: 7px;
+      font-size: 0.9rem;
+    }
+
+    .legend-swatch{
+      width:18px;
+      height:18px;
+      border-radius: 4px;
+      margin-right:10px;
+      border: 1px solid rgba(0,0,0,0.2);
+      flex-shrink: 0;
+    }
+
+    .status{
+      margin-top:10px;
+      font-size:0.9rem;
+      color: var(--muted);
+    }
+
+    .leaflet-popup-content{
+      font-family: "Inter", sans-serif;
+    }
+
+    @media (max-width: 1100px){
+      .app{ grid-template-columns: 320px 1fr; }
+      .panel-right{ display:none; }
+    }
+
+    @media (max-width: 780px){
+      .app{ grid-template-columns: 1fr; }
+      .panel{ display:none; }
+      header p{ display:none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Urban Tree Phenology Explorer</h1>
+    <p>Species-level phenophase transitions on the University of Kentucky campus (2023–2025). Tree polygons are symbolized by species name and linked to phenology records using TARGET_FID.</p>
+  </header>
+
+  <div class="app">
+    <aside class="panel">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <h5 class="mb-0">Filters</h5>
+        <span class="pill">Beta Version</span>
+      </div>
+
+      <p class="small-note mb-3">
+        Tree polygons are colored by species. Use the year toggle to view the selected year's phenophase values in the information panel.
+      </p>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Year toggle</label>
+        <div class="btn-group w-100" role="group" aria-label="Year Toggle">
+          <input type="radio" class="btn-check" name="year" id="y2023" value="2023" autocomplete="off" checked>
+          <label class="btn btn-outline-success" for="y2023">2023</label>
+
+          <input type="radio" class="btn-check" name="year" id="y2024" value="2024" autocomplete="off">
+          <label class="btn btn-outline-success" for="y2024">2024</label>
+
+          <input type="radio" class="btn-check" name="year" id="y2025" value="2025" autocomplete="off">
+          <label class="btn btn-outline-success" for="y2025">2025</label>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Search by tree name</label>
+        <input id="speciesSearch" type="text" class="form-control" placeholder="e.g., Sugar Maple">
+      </div>
+
+      <div class="legend-box mb-3">
+        <strong>Species Legend</strong>
+        <div class="small-note mt-2">
+          Polygon colors match the species name shown below.
+        </div>
+        <div id="dynamicLegend" class="legend-scale"></div>
+      </div>
+
+      <div class="legend-box mb-3">
+        <strong>How it works</strong>
+        <div class="small-note mt-2">
+          Tree polygons are joined to the phenology table using <strong>TARGET_FID</strong>. The <strong>Name</strong> column is used for species labeling and symbol color.
+        </div>
+      </div>
+
+      <div id="statusBox" class="status">
+        Loading shapefile and CSV...
+      </div>
+    </aside>
+
+    <main>
+      <div id="map"></div>
+    </main>
+
+    <aside class="panel panel-right">
+      <h5 class="mb-2">Tree Information</h5>
+      <p class="small-note">
+        Click a tree polygon to see its name, ID, and phenology values.
+      </p>
+
+      <div id="infoBox" class="info-card">
+        <div class="text-muted">No tree selected yet.</div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const SHAPEFILE_PATH = "Data/TreePolygons.zip";
+    const CSV_PATH = "Data/Phenophase_Data.csv";
+
+    const ukCenter = [38.0387, -84.5044];
+
+    const map = L.map("map", {
+      zoomControl: true
+    }).setView(ukCenter, 16);
+
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
+      subdomains: "abcd",
+      maxZoom: 20
+    }).addTo(map);
+
+    const infoBox = document.getElementById("infoBox");
+    const speciesSearch = document.getElementById("speciesSearch");
+    const statusBox = document.getElementById("statusBox");
+    const dynamicLegend = document.getElementById("dynamicLegend");
+
+    let treeLayer = null;
+    let joinedFeatures = [];
+    let selectedFeature = null;
+    let speciesColorMap = {};
+
+    // 18-color palette
+    const colorPalette = [
+      "#1b9e77", "#d95f02", "#7570b3", "#e7298a", "#66a61e", "#e6ab02",
+      "#a6761d", "#666666", "#1f78b4", "#b2df8a", "#fb9a99", "#fdbf6f",
+      "#cab2d6", "#6a3d9a", "#ff7f00", "#b15928", "#2ca25f", "#de2d26"
+    ];
+
+    function getSelectedYear() {
+      const checked = document.querySelector('input[name="year"]:checked');
+      return checked ? checked.value : "2023";
+    }
+
+    function normalizeKey(val) {
+      if (val === null || val === undefined) return "";
+      return String(val).trim();
+    }
+
+    function safeNumber(val) {
+      if (val === null || val === undefined || val === "") return null;
+      const n = Number(val);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    function getFeatureName(props) {
+      return props.Name || "Unknown";
+    }
+
+    function getFeatureID(props) {
+      return props.TARGET_FID ?? "N/A";
+    }
+
+    function getSearchText(props) {
+      return (props.Name || "").toLowerCase().trim();
+    }
+
+    function filterFeature(props) {
+      const q = speciesSearch.value.trim().toLowerCase();
+      if (!q) return true;
+      return getSearchText(props).includes(q);
+    }
+
+    function getAllPhaseValuesForYear(props, year) {
+      return {
+        Greenup: safeNumber(props[`Greenup ${year}`]),
+        MidGreenup: safeNumber(props[`MidGreenup ${year}`]),
+        Maturity: safeNumber(props[`Maturity ${year}`]),
+        Senescence: safeNumber(props[`Senescence ${year}`]),
+        MidSenescence: safeNumber(props[`MidSenescence ${year}`]),
+        Dormancy: safeNumber(props[`Dormancy ${year}`])
+      };
+    }
+
+    function buildSpeciesColorMap(features) {
+      const uniqueSpecies = [...new Set(
+        features
+          .map(f => getFeatureName(f.properties))
+          .filter(name => name && name.trim() !== "")
+      )].sort((a, b) => a.localeCompare(b));
+
+      speciesColorMap = {};
+      uniqueSpecies.forEach((name, i) => {
+        speciesColorMap[name] = colorPalette[i % colorPalette.length];
+      });
+    }
+
+    function getSpeciesColor(name) {
+      return speciesColorMap[name] || "#999999";
+    }
+
+    function buildLegend() {
+      const speciesList = Object.keys(speciesColorMap).sort((a, b) => a.localeCompare(b));
+
+      dynamicLegend.innerHTML = speciesList.map(name => `
+        <div class="legend-row">
+          <span class="legend-swatch" style="background:${getSpeciesColor(name)};"></span>
+          <span>${name}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderInfo(props) {
+      const year = getSelectedYear();
+      const allVals = getAllPhaseValuesForYear(props, year);
+
+      infoBox.innerHTML = `
+        <div class="mb-2"><strong>Tree Name:</strong> ${getFeatureName(props)}</div>
+        <div class="mb-2"><strong>TARGET_FID:</strong> ${getFeatureID(props)}</div>
+        <div class="mb-2"><strong>Year:</strong> ${year}</div>
+
+        <div class="small-note fw-semibold mb-2 mt-3">Phenophases for ${year}</div>
+        <div class="small-note">
+          <div><strong>Greenup:</strong> ${allVals.Greenup ?? "N/A"}</div>
+          <div><strong>Mid-Greenup:</strong> ${allVals.MidGreenup ?? "N/A"}</div>
+          <div><strong>Maturity:</strong> ${allVals.Maturity ?? "N/A"}</div>
+          <div><strong>Senescence:</strong> ${allVals.Senescence ?? "N/A"}</div>
+          <div><strong>Mid-Senescence:</strong> ${allVals.MidSenescence ?? "N/A"}</div>
+          <div><strong>Dormancy:</strong> ${allVals.Dormancy ?? "N/A"}</div>
+        </div>
+      `;
+    }
+
+    function styleFeature(feature) {
+      const props = feature.properties;
+      const visible = filterFeature(props);
+      const name = getFeatureName(props);
+
+      return {
+        color: visible ? "#ffffff" : "transparent",
+        weight: visible ? 0.7 : 0,
+        fillColor: getSpeciesColor(name),
+        fillOpacity: visible ? 0.8 : 0
+      };
+    }
+
+    function refreshMap() {
+      if (!joinedFeatures.length) return;
+
+      if (treeLayer) {
+        treeLayer.remove();
+      }
+
+      treeLayer = L.geoJSON(joinedFeatures, {
+        style: styleFeature,
+        onEachFeature: (feature, layer) => {
+          const props = feature.properties;
+          const name = getFeatureName(props);
+          const id = getFeatureID(props);
+          const year = getSelectedYear();
+
+          layer.bindPopup(`
+            <strong>${name}</strong><br>
+            TARGET_FID: ${id}<br>
+            Year shown in panel: ${year}
+          `);
+
+          layer.on("click", () => {
+            selectedFeature = feature;
+            renderInfo(props);
+          });
+
+          layer.on("mouseover", function () {
+            if (filterFeature(props)) {
+              this.setStyle({
+                weight: 2,
+                color: "#ffd166"
+              });
+            }
+          });
+
+          layer.on("mouseout", function () {
+            treeLayer.resetStyle(this);
+          });
+        }
+      }).addTo(map);
+
+      const visibleLayers = [];
+      treeLayer.eachLayer(layer => {
+        const props = layer.feature.properties;
+        if (filterFeature(props)) {
+          visibleLayers.push(layer);
+        }
+      });
+
+      if (visibleLayers.length > 0) {
+        const group = L.featureGroup(visibleLayers);
+        map.fitBounds(group.getBounds(), { padding: [20, 20] });
+      }
+
+      if (selectedFeature) {
+        renderInfo(selectedFeature.properties);
+      }
+
+      const visibleCount = joinedFeatures.filter(f => filterFeature(f.properties)).length;
+      statusBox.innerHTML = `
+        Loaded <strong>${joinedFeatures.length}</strong> tree polygons.<br>
+        Showing <strong>${visibleCount}</strong> visible features.<br>
+        Species categories: <strong>${Object.keys(speciesColorMap).length}</strong>.
+      `;
+    }
+
+    function loadCSV(url) {
+      return new Promise((resolve, reject) => {
+        Papa.parse(url, {
+          download: true,
+          header: true,
+          dynamicTyping: false,
+          skipEmptyLines: true,
+          complete: results => resolve(results.data),
+          error: err => reject(err)
+        });
+      });
+    }
+
+    async function loadShapefile(url) {
+      return await shp(url);
+    }
+
+    function joinData(geojson, csvRows) {
+      const csvLookup = new Map();
+
+      csvRows.forEach(row => {
+        const key = normalizeKey(row.TARGET_FID);
+        if (key) csvLookup.set(key, row);
+      });
+
+      geojson.features.forEach(feature => {
+        const props = feature.properties || {};
+        const fid = normalizeKey(props.TARGET_FID);
+
+        if (csvLookup.has(fid)) {
+          const csvRow = csvLookup.get(fid);
+          feature.properties = {
+            ...props,
+            ...csvRow
+          };
+        }
+      });
+
+      return geojson.features;
+    }
+
+    async function init() {
+      try {
+        statusBox.textContent = "Loading shapefile...";
+        const geojson = await loadShapefile(SHAPEFILE_PATH);
+
+        statusBox.textContent = "Loading CSV...";
+        const csvRows = await loadCSV(CSV_PATH);
+
+        statusBox.textContent = "Joining shapefile and CSV by TARGET_FID...";
+        joinedFeatures = joinData(geojson, csvRows);
+
+        if (!joinedFeatures.length) {
+          throw new Error("No joined features found. Check your shapefile and CSV.");
+        }
+
+        buildSpeciesColorMap(joinedFeatures);
+        buildLegend();
+        refreshMap();
+
+      } catch (error) {
+        console.error("Detailed error:", error);
+        statusBox.innerHTML = `
+          <span style="color:#b00020;"><strong>Error:</strong> ${error.message}</span><br>
+          Shapefile path: <code>${SHAPEFILE_PATH}</code><br>
+          CSV path: <code>${CSV_PATH}</code>
+        `;
+      }
+    }
+
+    document.querySelectorAll('input[name="year"]').forEach(radio => {
+      radio.addEventListener("change", () => {
+        if (selectedFeature) renderInfo(selectedFeature.properties);
+      });
+    });
+
+    speciesSearch.addEventListener("input", refreshMap);
+
+    init();
+  </script>
+</body>
+</html>

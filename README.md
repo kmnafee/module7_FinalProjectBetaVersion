@@ -14,12 +14,12 @@ The datasets include
  ### 2) Phenophase Data
  The phenophase were calculated using time-series NDVI data derived from PlanetScope imagwes. These represent key transition in tree canopy development. Six phenophase were calculated in this study. These are
 
- Greenup onset
- Mid Greenup
- Maturity
- Senescence onset
- Mid Senescence 
- Dormancy
+ #### Greenup onset
+ #### Mid Greenup
+ #### Maturity
+ #### Senescence onset
+ #### Mid Senescence 
+ #### Dormancy
 
  These datasets are included in the repository under the Data folder.
 
@@ -34,6 +34,9 @@ The interactive map follows a three column layout. The central panel includes th
 The objective of the map is to present the phenological data in an interactive format for broader audience. Though these type of data are mainly presented in scientific articles, rarely they are presented in an interactive way. Thus the main purpose of this is to show how hard scientific data can be presented in an interactive manner for the broader audience.
 
 
-## Description about Beta Version
+## Description about different functions used Beta Version
 
 The beta version was created using single index html file. This integrates all the required libraries and the functions needed to load the spatial and the tabular datasets. The core logic of the application is implemented through several JavaScript functions within the index html file. The map was centerred on the UK campus and the dark CARTO was used as the basemap. The csv/tabular data which was the phenophase dataset was loaded using Papa Parse function. The shapefile zip was loaded using the shp.js function. JoinData () was used to join the shapefile and the CSV using the common TARGET_FID column. The result was the creation of a combined dataset that contained both geometric and phenophase attributes. speciesColorMap function was used to identify unique species name from the dataset and assign color to them. styleFeature() and fillcolor was used to draw polygons and apply the assigned color of that species. Legend was created using the buildLegend() functionwhich read the species name from the color map. renderInfo() was used to ensure that the righ-side information keeps on updating when a user clicks on a tree. When the user clicks on the year of the changes the species filter the map redraws with those specific data. This process was computed using the refreshMap() function.
+
+## RepoLink
+https://github.com/kmnafee/module7_FinalProjectBetaVersion
